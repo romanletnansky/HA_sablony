@@ -82,8 +82,7 @@ action:
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
             value_template: '{{ command == ''toggle'' }}'
-        sequence:
-          - !input single_press
+        sequence: !input single_press
 
       - conditions:
           - condition: template
