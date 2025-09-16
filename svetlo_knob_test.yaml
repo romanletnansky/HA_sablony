@@ -52,93 +52,133 @@ blueprint:
       selector:
         action: {}
   source_url: https://gist.github.com/gonzaloalbito/3dc06702e941e08298ea9bfade731731
+
 mode: restart
 max_exceeded: silent
+
 trigger:
-- platform: event
-  event_type: zha_event
-  event_data:
-    device_id: !input remote
+  - platform: event
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
+
 action:
-- variables:
-    command: '{{ trigger.event.data.command }}'
-    cluster_id: '{{ trigger.event.data.cluster_id }}'
-    endpoint_id: '{{ trigger.event.data.endpoint_id }}'
-    mode: '{% if command != ''toggle'' %} {{ trigger.event.data.args[0] }} {% endif %}'
-    steps: '{% if command != ''toggle'' %} {{ (trigger.event.data.args[1] / 12.5 ) | int }} {% endif %}'
-    step_percent: !input step_percent
-    press_step_percent: !input press_step_percent
-- choose:
-  - conditions:
-    - '{{ cluster_id == 6 }}'
-    - '{{ endpoint_id == 1 }}'
-    - '{{ command == ''toggle'' }}'
-    sequence: !input single_press
-  - conditions:
-    - '{{ cluster_id == 8 }}'
-    - '{{ endpoint_id == 1 }}'
-    - '{{ command == ''step'' }}'
-    - '{{ mode == ''StepMode.Up'' }}'
-    sequence:
-    - repeat:
-        while:
-        - condition: template
-          value_template: '{{ repeat.index < 2 }}'
+  - variables:
+      command: '{{ trigger.event.data.command }}'
+      cluster_id: '{{ trigger.event.data.cluster_id }}'
+      endpoint_id: '{{ trigger.event.data.endpoint_id }}'
+      mode: '{% if command != ''toggle'' %} {{ trigger.event.data.args[0] }} {% endif %}'
+      steps: '{% if command != ''toggle'' %} {{ (trigger.event.data.args[1] / 12.5 ) | int }} {% endif %}'
+      step_percent: !input step_percent
+      press_step_percent: !input press_step_percent
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 6 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == ''toggle'' }}'
         sequence:
-        - service_template: light.turn_on
-          target: !input light
-          data_template:
-            brightness_step_pct: '{{ step_percent * steps }}'
-            transition: 0.5
-  - conditions:
-    - '{{ cluster_id == 8 }}'
-    - '{{ endpoint_id == 1 }}'
-    - '{{ command == ''step'' }}'
-    - '{{ mode == ''StepMode.Down'' }}'
-    sequence:
-    - repeat:
-        while:
-        - condition: template
-          value_template: '{{ repeat.index < 2 }}'
+          - !input single_press
+
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 8 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == ''step'' }}'
+          - condition: template
+            value_template: '{{ mode == ''StepMode.Up'' }}'
         sequence:
-        - service_template: light.turn_on
-          target: !input light
-          data_template:
-            brightness_step_pct: '-{{ step_percent * steps }}'
-            transition: 0.5
-- conditions:
-  - '{{ cluster_id == 768 }}'
-  - '{{ endpoint_id == 1 }}'
-  - '{{ command == "step_color_temp" }}'
-sequence:
-  - service: light.turn_on
-    target: !input press_light
-    data_template:
-      color_temp: >
-        {% set ent = press_light if press_light is string else press_light.entity_id %}
-        {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
-        {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
-        {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
-        {% set step = 5 %}   # změň na jakýkoli pevný krok (mireds)
-        {% if mode == 'StepMode.Up' %}
-          {{ [cur - step, minm] | max }}
-        {% else %}
-          {{ [cur + step, maxm] | min }}
-        {% endif %}
-      transition: 0.5
-  - conditions:
-    - '{{ cluster_id == 768 }}'
-    - '{{ endpoint_id == 1 }}'
-    - '{{ command == ''step_color_temp'' }}'
-    - '{{ mode == ''StepMode.Down'' }}'
-    sequence:
-    - repeat:
-        while:
-        - condition: template
-          value_template: '{{ repeat.index < 2 }}'
+          - repeat:
+              while:
+                - condition: template
+                  value_template: '{{ repeat.index < 2 }}'
+              sequence:
+                - service: light.turn_on
+                  target: !input light
+                  data_template:
+                    brightness_step_pct: '{{ step_percent * steps }}'
+                    transition: 0.5
+
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 8 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == ''step'' }}'
+          - condition: template
+            value_template: '{{ mode == ''StepMode.Down'' }}'
         sequence:
-        - service_template: light.turn_on
-          target: !input press_light
-          data_template:
-            color_temp_step: '-{{ press_step_percent * steps }}'
-            transition: 0.5
+          - repeat:
+              while:
+                - condition: template
+                  value_template: '{{ repeat.index < 2 }}'
+              sequence:
+                - service: light.turn_on
+                  target: !input light
+                  data_template:
+                    brightness_step_pct: '-{{ step_percent * steps }}'
+                    transition: 0.5
+
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Up" }}'
+        sequence:
+          - repeat:
+              while:
+                - condition: template
+                  value_template: '{{ repeat.index < 2 }}'
+              sequence:
+                - service: light.turn_on
+                  target: !input press_light
+                  data_template:
+                    color_temp: >
+                      {% set ent = press_light if press_light is string else press_light.entity_id %}
+                      {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+                      {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                      {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                      {% set step = 5 %}
+                      {% set new = cur - (step * (repeat.index + 1)) %}
+                      {{ [new, minm] | max | int }}
+                    transition: 0.5
+
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Down" }}'
+        sequence:
+          - repeat:
+              while:
+                - condition: template
+                  value_template: '{{ repeat.index < 2 }}'
+              sequence:
+                - service: light.turn_on
+                  target: !input press_light
+                  data_template:
+                    color_temp: >
+                      {% set ent = press_light if press_light is string else press_light.entity_id %}
+                      {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+                      {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                      {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                      {% set step = 5 %}
+                      {% set new = cur + (step * (repeat.index + 1)) %}
+                      {{ [new, maxm] | min | int }}
+                    transition: 0.5
+
+    default: []
