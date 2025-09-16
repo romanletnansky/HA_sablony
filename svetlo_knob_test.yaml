@@ -106,22 +106,26 @@ action:
           data_template:
             brightness_step_pct: '-{{ step_percent * steps }}'
             transition: 0.5
-  - conditions:
-    - '{{ cluster_id == 768 }}'
-    - '{{ endpoint_id == 1 }}'
-    - '{{ command == ''step_color_temp'' }}'
-    - '{{ mode == ''StepMode.Up'' }}'
-    sequence:
-    - repeat:
-        while:
-        - condition: template
-          value_template: '{{ repeat.index < 2 }}'
-        sequence:
-        - service_template: light.turn_on
-          target: !input press_light
-          data_template:
-            color_temp_step: '{{ press_step_percent * steps }}'
-            transition: 0.5
+- conditions:
+  - '{{ cluster_id == 768 }}'
+  - '{{ endpoint_id == 1 }}'
+  - '{{ command == "step_color_temp" }}'
+sequence:
+  - service: light.turn_on
+    target: !input press_light
+    data_template:
+      color_temp: >
+        {% set ent = press_light if press_light is string else press_light.entity_id %}
+        {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+        {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+        {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+        {% set step = 5 %}   # změň na jakýkoli pevný krok (mireds)
+        {% if mode == 'StepMode.Up' %}
+          {{ [cur - step, minm] | max }}
+        {% else %}
+          {{ [cur + step, maxm] | min }}
+        {% endif %}
+      transition: 0.5
   - conditions:
     - '{{ cluster_id == 768 }}'
     - '{{ endpoint_id == 1 }}'
