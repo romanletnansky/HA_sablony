@@ -124,53 +124,38 @@ action:
                     transition: 0.5
 
       - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Up" }}'
+          - '{{ cluster_id == 768 }}'
+          - '{{ endpoint_id == 1 }}'
+          - '{{ command == "step_color_temp" }}'
+          - '{{ mode == "StepMode.Up" }}'
         sequence:
           - service: light.turn_on
             target: !input press_light
             data:
               color_temp: >
                 {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
                 {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
-                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
                 {% set step = 20 %}
-                {% if mode == "StepMode.Up" %}
-                  {{ [cur - step, minm] | max }}
-                {% else %}
-                  {{ [cur + step, maxm] | min }}
-                {% endif %}
+                {{ [cur - step, minm] | max }}
               transition: 0.5
 
       - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Down" }}'
+          - '{{ cluster_id == 768 }}'
+          - '{{ endpoint_id == 1 }}'
+          - '{{ command == "step_color_temp" }}'
+          - '{{ mode == "StepMode.Down" }}'
         sequence:
           - service: light.turn_on
             target: !input press_light
             data:
-              color_temp: >-
+              color_temp: >
                 {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
-                {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
                 {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
-                {% set step = 5 %}
-                {% set times = 2 %}
-                {% set new = cur + (step * times) %}
-                {{ [new, maxm] | min | int }}
+                {% set step = 20 %}
+                {{ [cur + step, maxm] | min }}
               transition: 0.5
+
 
     default: []
