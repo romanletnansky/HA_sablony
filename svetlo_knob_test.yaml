@@ -136,16 +136,17 @@ action:
           - service: light.turn_on
             target: !input press_light
             data:
-              color_temp: >-
+              color_temp: >
                 {% set ent = press_light if press_light is string else press_light.entity_id %}
                 {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
                 {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
                 {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
-                {% set step = 5 %}
-                {# Počet kroků, které chceme udělat najednou (dříve se opakovalo 2×) #}
-                {% set times = 2 %}
-                {% set new = cur - (step * times) %}
-                {{ [new, minm] | max | int }}
+                {% set step = 20 %}
+                {% if mode == "StepMode.Up" %}
+                  {{ [cur - step, minm] | max }}
+                {% else %}
+                  {{ [cur + step, maxm] | min }}
+                {% endif %}
               transition: 0.5
 
       - conditions:
