@@ -1,0 +1,140 @@
+blueprint:
+  name: Světlo knob
+  description: 'Světlo knob upraveno 16.9.2025'
+  domain: automation
+  input:
+    remote:
+      name: Remote
+      description: Moes Knob to use
+      selector:
+        device:
+          integration: zha
+          model: TS004F
+          multiple: false
+    light:
+      name: Light(s)
+      description: The light(s) to control
+      selector:
+        target:
+          entity:
+            domain: light
+    step_percent:
+      name: Light step
+      description: Light pecent change for each knob step
+      selector:
+        number:
+          mode: slider
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+      default: 20
+    press_light:
+      name: Pressed light(s)
+      description: The light(s) to control when pressed
+      selector:
+        target:
+          entity:
+            domain: light
+    press_step_percent:
+      name: Pressed light step
+      description: Light pecent change for each knob step when pressed
+      selector:
+        number:
+          mode: slider
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+      default: 5
+    single_press:
+      name: Single press
+      description: Action to run on single press
+      default: []
+      selector:
+        action: {}
+  source_url: https://gist.github.com/gonzaloalbito/3dc06702e941e08298ea9bfade731731
+mode: restart
+max_exceeded: silent
+trigger:
+- platform: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote
+action:
+- variables:
+    command: '{{ trigger.event.data.command }}'
+    cluster_id: '{{ trigger.event.data.cluster_id }}'
+    endpoint_id: '{{ trigger.event.data.endpoint_id }}'
+    mode: '{% if command != ''toggle'' %} {{ trigger.event.data.args[0] }} {% endif %}'
+    steps: '{% if command != ''toggle'' %} {{ (trigger.event.data.args[1] / 12.5 ) | int }} {% endif %}'
+    step_percent: !input step_percent
+    press_step_percent: !input press_step_percent
+- choose:
+  - conditions:
+    - '{{ cluster_id == 6 }}'
+    - '{{ endpoint_id == 1 }}'
+    - '{{ command == ''toggle'' }}'
+    sequence: !input single_press
+  - conditions:
+    - '{{ cluster_id == 8 }}'
+    - '{{ endpoint_id == 1 }}'
+    - '{{ command == ''step'' }}'
+    - '{{ mode == ''StepMode.Up'' }}'
+    sequence:
+    - repeat:
+        while:
+        - condition: template
+          value_template: '{{ repeat.index < 2 }}'
+        sequence:
+        - service_template: light.turn_on
+          target: !input light
+          data_template:
+            brightness_step_pct: '{{ step_percent * steps }}'
+            transition: 0.5
+  - conditions:
+    - '{{ cluster_id == 8 }}'
+    - '{{ endpoint_id == 1 }}'
+    - '{{ command == ''step'' }}'
+    - '{{ mode == ''StepMode.Down'' }}'
+    sequence:
+    - repeat:
+        while:
+        - condition: template
+          value_template: '{{ repeat.index < 2 }}'
+        sequence:
+        - service_template: light.turn_on
+          target: !input light
+          data_template:
+            brightness_step_pct: '-{{ step_percent * steps }}'
+            transition: 0.5
+  - conditions:
+    - '{{ cluster_id == 768 }}'
+    - '{{ endpoint_id == 1 }}'
+    - '{{ command == ''step_color_temp'' }}'
+    - '{{ mode == ''StepMode.Up'' }}'
+    sequence:
+    - repeat:
+        while:
+        - condition: template
+          value_template: '{{ repeat.index < 2 }}'
+        sequence:
+        - service_template: light.turn_on
+          target: !input press_light
+          data_template:
+            color_temp_step: '{{ press_step_percent * steps }}'
+            transition: 0.5
+  - conditions:
+    - '{{ cluster_id == 768 }}'
+    - '{{ endpoint_id == 1 }}'
+    - '{{ command == ''step_color_temp'' }}'
+    - '{{ mode == ''StepMode.Down'' }}'
+    sequence:
+    - repeat:
+        while:
+        - condition: template
+          value_template: '{{ repeat.index < 2 }}'
+        sequence:
+        - service_template: light.turn_on
+          target: !input press_light
+          data_template:
+            color_temp_step: '-{{ press_step_percent * steps }}'
+            transition: 0.5
