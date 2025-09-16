@@ -1,6 +1,6 @@
 blueprint:
   name: Světlo knob
-  description: 'Světlo knob upraveno 16.9.2025'
+  description: 'Světlo knob upraveno 16.9.2025 — opravená a robustní verze'
   domain: automation
   input:
     remote:
@@ -20,7 +20,7 @@ blueprint:
             domain: light
     step_percent:
       name: Light step
-      description: Light pecent change for each knob step
+      description: Light percent change for each knob step
       selector:
         number:
           mode: slider
@@ -37,7 +37,7 @@ blueprint:
             domain: light
     press_step_percent:
       name: Pressed light step
-      description: Light pecent change for each knob step when pressed
+      description: Light percent change for each knob step when pressed
       selector:
         number:
           mode: slider
@@ -48,7 +48,7 @@ blueprint:
     single_press:
       name: Single press
       description: Action to run on single press
-      # místo prázdného [] použijeme no-op akci, aby blueprint prošel validací
+      # výchozí no-op akce — tím zabráníme, že vytvořená automatizace bude obsahovat prázdný seznam akcí
       default:
         - delay: '00:00:00'
       selector:
@@ -69,8 +69,8 @@ action:
       command: '{{ trigger.event.data.command }}'
       cluster_id: '{{ trigger.event.data.cluster_id }}'
       endpoint_id: '{{ trigger.event.data.endpoint_id }}'
-      mode: '{% if command != ''toggle'' %} {{ trigger.event.data.args[0] }} {% endif %}'
-      steps: '{% if command != ''toggle'' %} {{ (trigger.event.data.args[1] / 12.5 ) | int }} {% endif %}'
+      mode: '{% if command != "toggle" %}{{ trigger.event.data.args[0] }}{% endif %}'
+      steps: '{% if command != "toggle" %}{{ (trigger.event.data.args[1] / 12.5) | int }}{% endif %}'
       step_percent: !input step_percent
       press_step_percent: !input press_step_percent
 
@@ -81,7 +81,8 @@ action:
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == ''toggle'' }}'
+            value_template: '{{ command == "toggle" }}'
+        # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
 
       - conditions:
@@ -90,18 +91,16 @@ action:
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == ''step'' }}'
+            value_template: '{{ command == "step" }}'
           - condition: template
-            value_template: '{{ mode == ''StepMode.Up'' }}'
+            value_template: '{{ mode == "StepMode.Up" }}'
         sequence:
           - repeat:
-              while:
-                - condition: template
-                  value_template: '{{ repeat.index < 2 }}'
+              count: 2
               sequence:
                 - service: light.turn_on
                   target: !input light
-                  data_template:
+                  data:
                     brightness_step_pct: '{{ step_percent * steps }}'
                     transition: 0.5
 
@@ -111,18 +110,16 @@ action:
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == ''step'' }}'
+            value_template: '{{ command == "step" }}'
           - condition: template
-            value_template: '{{ mode == ''StepMode.Down'' }}'
+            value_template: '{{ mode == "StepMode.Down" }}'
         sequence:
           - repeat:
-              while:
-                - condition: template
-                  value_template: '{{ repeat.index < 2 }}'
+              count: 2
               sequence:
                 - service: light.turn_on
                   target: !input light
-                  data_template:
+                  data:
                     brightness_step_pct: '-{{ step_percent * steps }}'
                     transition: 0.5
 
@@ -136,23 +133,20 @@ action:
           - condition: template
             value_template: '{{ mode == "StepMode.Up" }}'
         sequence:
-          - repeat:
-              while:
-                - condition: template
-                  value_template: '{{ repeat.index < 2 }}'
-              sequence:
-                - service: light.turn_on
-                  target: !input press_light
-                  data_template:
-                    color_temp: >
-                      {% set ent = press_light if press_light is string else press_light.entity_id %}
-                      {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
-                      {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
-                      {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
-                      {% set step = 5 %}
-                      {% set new = cur - (step * (repeat.index + 1)) %}
-                      {{ [new, minm] | max | int }}
-                    transition: 0.5
+          - service: light.turn_on
+            target: !input press_light
+            data:
+              color_temp: >-
+                {% set ent = press_light if press_light is string else press_light.entity_id %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+                {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                {% set step = 5 %}
+                {# Počet kroků, které chceme udělat najednou (dříve se opakovalo 2×) #}
+                {% set times = 2 %}
+                {% set new = cur - (step * times) %}
+                {{ [new, minm] | max | int }}
+              transition: 0.5
 
       - conditions:
           - condition: template
@@ -164,22 +158,18 @@ action:
           - condition: template
             value_template: '{{ mode == "StepMode.Down" }}'
         sequence:
-          - repeat:
-              while:
-                - condition: template
-                  value_template: '{{ repeat.index < 2 }}'
-              sequence:
-                - service: light.turn_on
-                  target: !input press_light
-                  data_template:
-                    color_temp: >
-                      {% set ent = press_light if press_light is string else press_light.entity_id %}
-                      {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
-                      {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
-                      {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
-                      {% set step = 5 %}
-                      {% set new = cur + (step * (repeat.index + 1)) %}
-                      {{ [new, maxm] | min | int }}
-                    transition: 0.5
+          - service: light.turn_on
+            target: !input press_light
+            data:
+              color_temp: >-
+                {% set ent = press_light if press_light is string else press_light.entity_id %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(153)) %}
+                {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                {% set step = 5 %}
+                {% set times = 2 %}
+                {% set new = cur + (step * times) %}
+                {{ [new, maxm] | min | int }}
+              transition: 0.5
 
     default: []
