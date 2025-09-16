@@ -48,7 +48,9 @@ blueprint:
     single_press:
       name: Single press
       description: Action to run on single press
-      default: []
+      # místo prázdného [] použijeme no-op akci, aby blueprint prošel validací
+      default:
+        - delay: '00:00:00'
       selector:
         action: {}
   source_url: https://gist.github.com/gonzaloalbito/3dc06702e941e08298ea9bfade731731
