@@ -66,13 +66,12 @@ trigger:
 
 action:
   - variables:
-      command: '{{ trigger.event.data.command }}'
-      cluster_id: '{{ trigger.event.data.cluster_id }}'
-      endpoint_id: '{{ trigger.event.data.endpoint_id }}'
-      mode: '{% if command != "toggle" %}{{ trigger.event.data.args[0] }}{% endif %}'
-      steps: '{% if command != "toggle" %}{{ (trigger.event.data.args[1] / 12.5) | int }}{% endif %}'
-      step_percent: !input step_percent
-      press_step_percent: !input press_step_percent
+    cluster_id: "{{ trigger.event.data.cluster_id }}"
+    endpoint_id: "{{ trigger.event.data.endpoint_id }}"
+    command: "{{ trigger.event.data.command }}"
+    steps: "{{ trigger.event.data.args[1] if trigger.event.data.args | length > 1 else 1 }}"
+    step_percent: "{{ trigger.event.data.args[2] if trigger.event.data.args | length > 2 else 5 }}"
+
 
   - choose:
       - conditions:
