@@ -114,7 +114,7 @@ action:
           - condition: template
             value_template: '{{ mode == "StepMode.Down" }}'
           - condition: state
-            entity_id: "light.svetlo_jidelna"
+            entity_id: "light.svetlo_kuchyn"
             state: "on"
         sequence:
           - repeat:
