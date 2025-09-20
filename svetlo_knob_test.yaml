@@ -128,6 +128,9 @@ action:
           - '{{ endpoint_id == 1 }}'
           - '{{ command == "step_color_temp" }}'
           - '{{ mode == "StepMode.Up" }}'
+          - condition: state
+            entity_id: !input press_light
+            state: "on"
         sequence:
           - service: light.turn_on
             target: !input press_light
@@ -145,22 +148,20 @@ action:
           - '{{ endpoint_id == 1 }}'
           - '{{ command == "step_color_temp" }}'
           - '{{ mode == "StepMode.Down" }}'
+          - condition: state
+            entity_id: !input press_light
+            state: "on"
         sequence:
           - service: light.turn_on
             target: !input press_light
             data:
-              brightness: >
-                {% set cur = state_attr('light.svetlo_kuchyn','brightness') | int(128) %}
-                {% set step = trigger.event.data.params.step_size | int(25) %}
-                {% if trigger.event.data.params.step_mode == 0 %}
-                  {% set new = cur + step %}
-                {% else %}
-                  {% set new = cur - step %}
-                {% endif %}
-                {# nastavíme hranice 5 % – 100 % #}
-                {% set minb = (255 * 0.05) | int %}
-                {% set maxb = 255 %}
-                {{ [minb, [new, maxb] | min] | max }}
+              color_temp: >
+                {% set ent = press_light if press_light is string else press_light.entity_id %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
+                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                {% set step = 10 %}
+                {{ [cur + step, maxm] | min }}
+              transition: 0.5
 
 
     default: []
