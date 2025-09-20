@@ -133,8 +133,7 @@ action:
           - condition: template
             value_template: '{{ mode == "StepMode.Up" }}'
           - condition: state
-            entity_id: 
-              - !input press_light
+            entity_id: light.svetlo_jidelna
             state: "on"
         sequence:
           - service: light.turn_on
@@ -158,8 +157,7 @@ action:
           - condition: template
             value_template: '{{ mode == "StepMode.Down" }}'
           - condition: state
-            entity_id: 
-              - !input press_light
+            entity_id: light.svetlo_jidelna
             state: "on"
         sequence:
           - service: light.turn_on
