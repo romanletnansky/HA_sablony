@@ -94,9 +94,6 @@ action:
             value_template: '{{ command == "step" }}'
           - condition: template
             value_template: '{{ mode == "StepMode.Up" }}'
-          - condition: state
-            entity_id: "light.svetlo_jidelna"
-            state: "on"
         sequence:
           - repeat:
               count: 2
@@ -126,13 +123,7 @@ action:
                 - service: light.turn_on
                   target: !input light
                   data:
-                    brightness: >
-                      {% set entities = expand(!input light) %}
-                      {% for ent in entities %}
-                        {% set cur = state_attr(ent.entity_id, 'brightness') | int(0) %}
-                        {% set step = (step_percent * steps * 255 / 100) | int %}
-                        {{ [cur - step, 13] | max }}
-                      {% endfor %}
+                    brightness_step_pct: '-{{ step_percent * steps }}'
                     transition: 0.5
 
       - conditions:
