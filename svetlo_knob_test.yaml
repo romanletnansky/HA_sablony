@@ -87,7 +87,7 @@ action:
             value_template: '{{ trigger.event.data.args[0] == 0 }}'
         # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
-        
+
   # UP
   - conditions:
       - condition: template
@@ -102,8 +102,10 @@ action:
       - service: light.turn_on
         target: !input light
         data:
-          brightness_step_pct: '{{ step_percent * steps }}'
-          transition: 0.5
+          brightness: >
+            {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+            {% set new = cur + (step_percent * steps * 255 / 100) %}
+            {{ [0, [255, new]|min]|max }}
 
   # DOWN
   - conditions:
@@ -119,8 +121,11 @@ action:
       - service: light.turn_on
         target: !input light
         data:
-          brightness_step_pct: '-{{ step_percent * steps }}'
-          transition: 0.5
+          brightness: >
+            {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+            {% set new = cur - (step_percent * steps * 255 / 100) %}
+            {{ [0, [255, new]|min]|max }}
+
 
       - conditions:
           - '{{ cluster_id == 768 }}'
