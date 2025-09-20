@@ -129,47 +129,6 @@ action:
                 {% set new = cur - (step_percent * steps * 255 / 100) %}
                 {{ [0, [255, new]|min]|max }}
 
-      # COLOR TEMP UP
-      - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Up" }}'
-        sequence:
-          - service: light.turn_on
-            target: !input press_light
-            data:
-              color_temp: >
-                {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = state_attr(ent, 'color_temp') | int(370) %}
-                {% set minm = state_attr(ent, 'min_mireds') | int(153) %}
-                {% set step = 20 %}
-                {{ [cur - step, minm] | max }}
-
-      # COLOR TEMP DOWN
-      - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Down" }}'
-        sequence:
-          - service: light.turn_on
-            target: !input press_light
-            data:
-              color_temp: >
-                {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = state_attr(ent, 'color_temp') | int(370) %}
-                {% set maxm = state_attr(ent, 'max_mireds') | int(500) %}
-                {% set step = 20 %}
-                {{ [cur + step, maxm] | min }}
 
 
     default: []
