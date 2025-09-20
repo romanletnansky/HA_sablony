@@ -126,7 +126,10 @@ action:
                 - service: light.turn_on
                   target: !input light
                   data:
-                    brightness_step_pct: '-{{ step_percent * steps }}'
+                    brightness: >
+                      {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+                      {% set step = (step_percent * steps * 255 / 100) | int %}
+                      {{ [cur - step, 13] | max }}
                     transition: 0.5
 
       - conditions:
@@ -179,7 +182,7 @@ action:
             data:
               color_temp: >
                 {% set cur = state_attr("light.svetlo_jidelna", "color_temp") | int(370) %}
-                
+
                 {% set minm = state_attr("light.svetlo_jidelna", "min_mireds") | int(153) %}
 
                 {% set maxm = state_attr("light.svetlo_jidelna", "max_mireds") | int(500) %}
