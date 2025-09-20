@@ -53,22 +53,6 @@ blueprint:
         - delay: '00:00:00'
       selector:
         action: {}
-    
-    rotate_up:
-      name: Rotate Up
-      description: Action(s) to run when knob is rotated up
-      default:
-        - delay: '00:00:00'
-      selector:
-        action: {}
-
-    rotate_down:
-      name: Rotate Down
-      description: Action(s) to run when knob is rotated down
-      default:
-        - delay: '00:00:00'
-      selector:
-        action: {}
   source_url: https://gist.github.com/gonzaloalbito/3dc06702e941e08298ea9bfade731731
 
 mode: restart
@@ -82,15 +66,14 @@ trigger:
 
 action:
   - variables:
-      command: "{{ trigger.event.data.command }}"
-      cluster_id: "{{ trigger.event.data.cluster_id }}"
-      endpoint_id: "{{ trigger.event.data.endpoint_id }}"
-      mode: "{{ trigger.event.data.args[0] if trigger.event.data.args | length > 0 else None }}"
-      steps: "{{ (trigger.event.data.args[1] / 12.5) | int if trigger.event.data.args | length > 1 else 1 }}"
-      step_percent: 5
-      press_step_percent: 5
+      command: '{{ trigger.event.data.command }}'
+      cluster_id: '{{ trigger.event.data.cluster_id }}'
+      endpoint_id: '{{ trigger.event.data.endpoint_id }}'
+      mode: '{% if command != "toggle" %}{{ trigger.event.data.args[0] }}{% endif %}'
+      steps: '{% if command != "toggle" %}{{ (trigger.event.data.args[1] / 12.5) | int }}{% endif %}'
+      step_percent: !input step_percent
+      press_step_percent: !input press_step_percent
 
-  # SINGLE PRESS
   - choose:
       - conditions:
           - condition: template
@@ -98,36 +81,81 @@ action:
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "press_type" }}'
-          - condition: template
-            value_template: '{{ trigger.event.data.args[0] == 0 }}'
+            value_template: '{{ command == "toggle" }}'
+        # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
 
-    # ROTATE UP
-  - choose:
       - conditions:
           - condition: template
-            value_template: '{{ cluster_id == 6 }}'
+            value_template: '{{ cluster_id == 8 }}'
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "rotate_type" }}'
+            value_template: '{{ command == "step" }}'
           - condition: template
-            value_template: '{{ trigger.event.data.args[0] == 1 }}'
-        sequence: !input rotate_up
+            value_template: '{{ mode == "StepMode.Up" }}'
+        sequence:
+          - repeat:
+              count: 2
+              sequence:
+                - service: light.turn_on
+                  target: !input light
+                  data:
+                    brightness_step_pct: '{{ step_percent * steps }}'
+                    transition: 0.5
 
-  # ROTATE DOWN
-  - choose:
       - conditions:
           - condition: template
-            value_template: '{{ cluster_id == 6 }}'
+            value_template: '{{ cluster_id == 8 }}'
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "rotate_type" }}'
+            value_template: '{{ command == "step" }}'
           - condition: template
-            value_template: '{{ trigger.event.data.args[0] == 0 }}'
-        sequence: !input rotate_down
+            value_template: '{{ mode == "StepMode.Down" }}'
+        sequence:
+          - repeat:
+              count: 2
+              sequence:
+                - service: light.turn_on
+                  target: !input light
+                  data:
+                    brightness_step_pct: '-{{ step_percent * steps }}'
+                    transition: 0.5
+
+      - conditions:
+          - '{{ cluster_id == 768 }}'
+          - '{{ endpoint_id == 1 }}'
+          - '{{ command == "step_color_temp" }}'
+          - '{{ mode == "StepMode.Up" }}'
+        sequence:
+          - service: light.turn_on
+            target: !input press_light
+            data:
+              color_temp: >
+                {% set ent = press_light if press_light is string else press_light.entity_id %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
+                {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                {% set step = 20 %}
+                {{ [cur - step, minm] | max }}
+              transition: 0.5
+
+      - conditions:
+          - '{{ cluster_id == 768 }}'
+          - '{{ endpoint_id == 1 }}'
+          - '{{ command == "step_color_temp" }}'
+          - '{{ mode == "StepMode.Down" }}'
+        sequence:
+          - service: light.turn_on
+            target: !input press_light
+            data:
+              color_temp: >
+                {% set ent = press_light if press_light is string else press_light.entity_id %}
+                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
+                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                {% set step = 20 %}
+                {{ [cur + step, maxm] | min }}
+              transition: 0.5
 
 
     default: []
