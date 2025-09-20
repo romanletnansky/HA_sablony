@@ -152,7 +152,7 @@ action:
                 {% set maxm = state_attr("light.svetlo_jidelna", "max_mireds") | int(500) %}
                 {% set step_pct = press_step_percent %}  # krok v procentech
                 {% set step = step_pct * (maxm - minm) / 100 %}  # přepočet % na mireds
-                {{ [cur - step, minm] | max }}
+                {{ [cur - step, minm] | max | int }}
               transition: 0.5
 
       - conditions:
@@ -178,7 +178,7 @@ action:
                 {% set maxm = state_attr("light.svetlo_jidelna", "max_mireds") | int(500) %}
                 {% set step_pct = press_step_percent %}  # krok v procentech
                 {% set step = step_pct * (maxm - minm) / 100 %}  # přepočet % na mireds
-                {{ [cur + step, minm] | max }}
+                {{ [cur + step, minm] | max | int }}
               transition: 0.5
 
 
