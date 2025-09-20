@@ -85,15 +85,16 @@ action:
         # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
 
+      # UP
       - conditions:
           - condition: template
-            value_template: '{{ cluster_id == 8 }}'
+            value_template: '{{ cluster_id == 6 }}'
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "step" }}'
+            value_template: '{{ command == "rotate_type" }}'
           - condition: template
-            value_template: '{{ mode == "StepMode.Up" }}'
+            value_template: '{{ trigger.event.data.args[0] == 1 }}'
         sequence:
           - repeat:
               count: 2
@@ -103,16 +104,16 @@ action:
                   data:
                     brightness_step_pct: '{{ step_percent * steps }}'
                     transition: 0.5
-
+      # DOWN
       - conditions:
           - condition: template
-            value_template: '{{ cluster_id == 8 }}'
+            value_template: '{{ cluster_id == 6 }}'
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "step" }}'
+            value_template: '{{ command == "rotate_type" }}'
           - condition: template
-            value_template: '{{ mode == "StepMode.Down" }}'
+            value_template: '{{ trigger.event.data.args[0] == 0 }}'
         sequence:
           - repeat:
               count: 2
