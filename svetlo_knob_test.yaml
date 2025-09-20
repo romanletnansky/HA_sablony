@@ -97,7 +97,7 @@ action:
           - condition: template
             value_template: '{{ command == "rotate_type" }}'
           - condition: template
-            value_template: '{{ trigger.event.data.args[0] == 1 }}'
+            value_template: '{{ trigger.event.data.args[0] == 0 }}'
         sequence:
           - repeat:
               count: 2
@@ -105,7 +105,7 @@ action:
                 - service: light.turn_on
                   target: !input light
                   data:
-                    brightness_step_pct: '{{ step_percent * steps }}'
+                    brightness_step_pct: '{{ step_percent }}'
                     transition: 0.5
       # DOWN
       - conditions:
@@ -116,7 +116,7 @@ action:
           - condition: template
             value_template: '{{ command == "rotate_type" }}'
           - condition: template
-            value_template: '{{ trigger.event.data.args[0] == 0 }}'
+            value_template: '{{ trigger.event.data.args[0] == 1 }}'
         sequence:
           - repeat:
               count: 2
@@ -124,7 +124,7 @@ action:
                 - service: light.turn_on
                   target: !input light
                   data:
-                    brightness_step_pct: '-{{ step_percent * steps }}'
+                    brightness_step_pct: '-{{ step_percent }}'
                     transition: 0.5
 
       - conditions:
