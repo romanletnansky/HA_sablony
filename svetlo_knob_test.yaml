@@ -124,10 +124,14 @@ action:
                     transition: 0.5
 
       - conditions:
-          - '{{ cluster_id == 768 }}'
-          - '{{ endpoint_id == 1 }}'
-          - '{{ command == "step_color_temp" }}'
-          - '{{ mode == "StepMode.Up" }}'
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Up" }}'
           - condition: state
             entity_id: !input press_light
             state: "on"
@@ -144,10 +148,14 @@ action:
               transition: 0.5
 
       - conditions:
-          - '{{ cluster_id == 768 }}'
-          - '{{ endpoint_id == 1 }}'
-          - '{{ command == "step_color_temp" }}'
-          - '{{ mode == "StepMode.Down" }}'
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Down" }}'
           - condition: state
             entity_id: !input press_light
             state: "on"
