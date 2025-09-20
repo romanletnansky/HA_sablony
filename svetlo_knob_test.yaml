@@ -82,7 +82,9 @@ action:
           - condition: template
             value_template: '{{ endpoint_id == 1 }}'
           - condition: template
-            value_template: '{{ command == "toggle" }}'
+            value_template: '{{ command == "press_type" }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.args[0] == 0 }}'
         # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
 
