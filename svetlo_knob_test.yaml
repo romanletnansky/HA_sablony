@@ -94,6 +94,9 @@ action:
             value_template: '{{ command == "step" }}'
           - condition: template
             value_template: '{{ mode == "StepMode.Up" }}'
+          - condition: state
+            entity_id: "light.svetlo_jidelna"
+            state: "on"
         sequence:
           - repeat:
               count: 2
@@ -113,6 +116,9 @@ action:
             value_template: '{{ command == "step" }}'
           - condition: template
             value_template: '{{ mode == "StepMode.Down" }}'
+          - condition: state
+            entity_id: "light.svetlo_jidelna"
+            state: "on"
         sequence:
           - repeat:
               count: 2
