@@ -104,7 +104,8 @@ action:
             target: !input light
             data:
               brightness: >
-                {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+                {% set ent = light.entity_id if light is not string else light %}
+                {% set cur = state_attr(ent, 'brightness') | int(0) %}
                 {% set new = cur + (step_percent * steps * 255 / 100) %}
                 {{ [0, [255, new]|min]|max }}
 
@@ -123,7 +124,8 @@ action:
             target: !input light
             data:
               brightness: >
-                {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+                {% set ent = light.entity_id if light is not string else light %}
+                {% set cur = state_attr(ent, 'brightness') | int(0) %}
                 {% set new = cur - (step_percent * steps * 255 / 100) %}
                 {{ [0, [255, new]|min]|max }}
 
