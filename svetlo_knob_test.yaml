@@ -127,9 +127,12 @@ action:
                   target: !input light
                   data:
                     brightness: >
-                      {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
-                      {% set step = (step_percent * steps * 255 / 100) | int %}
-                      {{ [cur - step, 13] | max }}
+                      {% set entities = expand(!input light) %}
+                      {% for ent in entities %}
+                        {% set cur = state_attr(ent.entity_id, 'brightness') | int(0) %}
+                        {% set step = (step_percent * steps * 255 / 100) | int %}
+                        {{ [cur - step, 13] | max }}
+                      {% endfor %}
                     transition: 0.5
 
       - conditions:
