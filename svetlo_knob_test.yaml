@@ -99,14 +99,11 @@ action:
           - condition: template
             value_template: '{{ trigger.event.data.args[0] == 0 }}'
         sequence:
-          - repeat:
-              count: 2
-              sequence:
-                - service: light.turn_on
-                  target: !input light
-                  data:
-                    brightness_step_pct: '{{ step_percent }}'
-                    transition: 0.5
+          - service: light.turn_on
+            target: !input light
+            data:
+              brightness_step_pct: '{{ step_percent }}'
+              transition: 0.5
       # DOWN
       - conditions:
           - condition: template
@@ -118,14 +115,11 @@ action:
           - condition: template
             value_template: '{{ trigger.event.data.args[0] == 1 }}'
         sequence:
-          - repeat:
-              count: 2
-              sequence:
-                - service: light.turn_on
-                  target: !input light
-                  data:
-                    brightness_step_pct: '-{{ step_percent }}'
-                    transition: 0.5
+          - service: light.turn_on
+            target: !input light
+            data:
+              brightness_step_pct: '-{{ step_percent }}'
+              transition: 0.5
 
       - conditions:
           - '{{ cluster_id == 768 }}'
