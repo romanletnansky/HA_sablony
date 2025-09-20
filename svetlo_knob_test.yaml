@@ -149,8 +149,10 @@ action:
               color_temp: >
                 {% set cur = state_attr("light.svetlo_jidelna", "color_temp") | int(370) %}
                 {% set minm = state_attr("light.svetlo_jidelna", "min_mireds") | int(153) %}
-                {% set step = 20 %}
-                {{ [cur + press_step_percent, minm] | max }}
+                {% set maxm = state_attr("light.svetlo_jidelna", "max_mireds") | int(500) %}
+                {% set step_pct = press_step_percent %}  # krok v procentech
+                {% set step = step_pct * (maxm - minm) / 100 %}  # přepočet % na mireds
+                {{ [cur - step, minm] | max }}
               transition: 0.5
 
       - conditions:
@@ -172,9 +174,11 @@ action:
             data:
               color_temp: >
                 {% set cur = state_attr("light.svetlo_jidelna", "color_temp") | int(370) %}
+                {% set minm = state_attr("light.svetlo_jidelna", "min_mireds") | int(153) %}
                 {% set maxm = state_attr("light.svetlo_jidelna", "max_mireds") | int(500) %}
-                {% set step = 20 %}
-                {{ [cur - press_step_percent, maxm] | min }}
+                {% set step_pct = press_step_percent %}  # krok v procentech
+                {% set step = step_pct * (maxm - minm) / 100 %}  # přepočet % na mireds
+                {{ [cur + step, minm] | max }}
               transition: 0.5
 
 
