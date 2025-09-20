@@ -74,7 +74,7 @@ action:
       step_percent: 5
       press_step_percent: 5
 
-
+  # SINGLE PRESS
   - choose:
       - conditions:
           - condition: template
@@ -85,81 +85,88 @@ action:
             value_template: '{{ command == "press_type" }}'
           - condition: template
             value_template: '{{ trigger.event.data.args[0] == 0 }}'
-        # VLOŽÍME přímo akce z inputu. Díky default no-op (výše) nikdy nevznikne prázdný seznam.
         sequence: !input single_press
 
-  # UP
-  - conditions:
-      - condition: template
-        value_template: '{{ cluster_id == 6 }}'
-      - condition: template
-        value_template: '{{ endpoint_id == 1 }}'
-      - condition: template
-        value_template: '{{ command == "rotate_type" }}'
-      - condition: template
-        value_template: '{{ trigger.event.data.args[0] == 1 }}'
-    sequence:
-      - service: light.turn_on
-        target: !input light
-        data:
-          brightness: >
-            {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
-            {% set new = cur + (step_percent * steps * 255 / 100) %}
-            {{ [0, [255, new]|min]|max }}
-
-  # DOWN
-  - conditions:
-      - condition: template
-        value_template: '{{ cluster_id == 6 }}'
-      - condition: template
-        value_template: '{{ endpoint_id == 1 }}'
-      - condition: template
-        value_template: '{{ command == "rotate_type" }}'
-      - condition: template
-        value_template: '{{ trigger.event.data.args[0] == 0 }}'
-    sequence:
-      - service: light.turn_on
-        target: !input light
-        data:
-          brightness: >
-            {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
-            {% set new = cur - (step_percent * steps * 255 / 100) %}
-            {{ [0, [255, new]|min]|max }}
-
-
+  # ROTATE UP / DOWN / COLOR TEMP
+  - choose:
+      # ROTATE UP
       - conditions:
-          - '{{ cluster_id == 768 }}'
-          - '{{ endpoint_id == 1 }}'
-          - '{{ command == "step_color_temp" }}'
-          - '{{ mode == "StepMode.Up" }}'
+          - condition: template
+            value_template: '{{ cluster_id == 6 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "rotate_type" }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.args[0] == 1 }}'
+        sequence:
+          - service: light.turn_on
+            target: !input light
+            data:
+              brightness: >
+                {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+                {% set new = cur + (step_percent * steps * 255 / 100) %}
+                {{ [0, [255, new]|min]|max }}
+
+      # ROTATE DOWN
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 6 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "rotate_type" }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.args[0] == 0 }}'
+        sequence:
+          - service: light.turn_on
+            target: !input light
+            data:
+              brightness: >
+                {% set cur = state_attr(light.entity_id, 'brightness') | int(0) %}
+                {% set new = cur - (step_percent * steps * 255 / 100) %}
+                {{ [0, [255, new]|min]|max }}
+
+      # PRESS LIGHT COLOR TEMP UP
+      - conditions:
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Up" }}'
         sequence:
           - service: light.turn_on
             target: !input press_light
             data:
               color_temp: >
                 {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
-                {% set minm = (state_attr(ent, 'min_mireds') | int(153)) %}
+                {% set cur = state_attr(ent, 'color_temp') | int(370) %}
+                {% set minm = state_attr(ent, 'min_mireds') | int(153) %}
                 {% set step = 20 %}
                 {{ [cur - step, minm] | max }}
-              transition: 0.5
 
+      # PRESS LIGHT COLOR TEMP DOWN
       - conditions:
-          - '{{ cluster_id == 768 }}'
-          - '{{ endpoint_id == 1 }}'
-          - '{{ command == "step_color_temp" }}'
-          - '{{ mode == "StepMode.Down" }}'
+          - condition: template
+            value_template: '{{ cluster_id == 768 }}'
+          - condition: template
+            value_template: '{{ endpoint_id == 1 }}'
+          - condition: template
+            value_template: '{{ command == "step_color_temp" }}'
+          - condition: template
+            value_template: '{{ mode == "StepMode.Down" }}'
         sequence:
           - service: light.turn_on
             target: !input press_light
             data:
               color_temp: >
                 {% set ent = press_light if press_light is string else press_light.entity_id %}
-                {% set cur = (state_attr(ent, 'color_temp') | int(370)) %}
-                {% set maxm = (state_attr(ent, 'max_mireds') | int(500)) %}
+                {% set cur = state_attr(ent, 'color_temp') | int(370) %}
+                {% set maxm = state_attr(ent, 'max_mireds') | int(500) %}
                 {% set step = 20 %}
                 {{ [cur + step, maxm] | min }}
-              transition: 0.5
-
 
     default: []
