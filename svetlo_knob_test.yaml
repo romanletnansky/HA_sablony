@@ -53,6 +53,22 @@ blueprint:
         - delay: '00:00:00'
       selector:
         action: {}
+    
+    rotate_up:
+      name: Rotate Up
+      description: Action(s) to run when knob is rotated up
+      default:
+        - delay: '00:00:00'
+      selector:
+        action: {}
+
+    rotate_down:
+      name: Rotate Down
+      description: Action(s) to run when knob is rotated down
+      default:
+        - delay: '00:00:00'
+      selector:
+        action: {}
   source_url: https://gist.github.com/gonzaloalbito/3dc06702e941e08298ea9bfade731731
 
 mode: restart
@@ -87,9 +103,8 @@ action:
             value_template: '{{ trigger.event.data.args[0] == 0 }}'
         sequence: !input single_press
 
-  # ROTATE / COLOR TEMP
+    # ROTATE UP
   - choose:
-      # ROTATE UP
       - conditions:
           - condition: template
             value_template: '{{ cluster_id == 6 }}'
@@ -99,25 +114,10 @@ action:
             value_template: '{{ command == "rotate_type" }}'
           - condition: template
             value_template: '{{ trigger.event.data.args[0] == 1 }}'
-        sequence:
-          - service: light.turn_on
-            target: !input light
-            data:
-              brightness: >
-                {% if light is mapping %}
-                  {% set entities = [light.entity_id] %}
-                {% elif light is iterable %}
-                  {% set entities = light | map(attribute='entity_id') | list %}
-                {% else %}
-                  {% set entities = [light] %}
-                {% endif %}
-                {% for ent in entities %}
-                  {% set cur = state_attr(ent, 'brightness') | int(0) %}
-                  {% set new = cur + (step_percent * steps * 255 / 100) %}
-                  {{ [0, [255, new]|min]|max }}
-                {% endfor %}
+        sequence: !input rotate_up
 
-      # ROTATE DOWN
+  # ROTATE DOWN
+  - choose:
       - conditions:
           - condition: template
             value_template: '{{ cluster_id == 6 }}'
@@ -127,81 +127,7 @@ action:
             value_template: '{{ command == "rotate_type" }}'
           - condition: template
             value_template: '{{ trigger.event.data.args[0] == 0 }}'
-        sequence:
-          - service: light.turn_on
-            target: !input light
-            data:
-              brightness: >
-                {% if light is mapping %}
-                  {% set entities = [light.entity_id] %}
-                {% elif light is iterable %}
-                  {% set entities = light | map(attribute='entity_id') | list %}
-                {% else %}
-                  {% set entities = [light] %}
-                {% endif %}
-                {% for ent in entities %}
-                  {% set cur = state_attr(ent, 'brightness') | int(0) %}
-                  {% set new = cur - (step_percent * steps * 255 / 100) %}
-                  {{ [0, [255, new]|min]|max }}
-                {% endfor %}
-
-      # COLOR TEMP UP
-      - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Up" }}'
-        sequence:
-          - service: light.turn_on
-            target: !input press_light
-            data:
-              color_temp: >
-                {% if press_light is mapping %}
-                  {% set entities = [press_light.entity_id] %}
-                {% elif press_light is iterable %}
-                  {% set entities = press_light | map(attribute='entity_id') | list %}
-                {% else %}
-                  {% set entities = [press_light] %}
-                {% endif %}
-                {% for ent in entities %}
-                  {% set cur = state_attr(ent, 'color_temp') | int(370) %}
-                  {% set minm = state_attr(ent, 'min_mireds') | int(153) %}
-                  {% set step = 20 %}
-                  {{ [cur - step, minm] | max }}
-                {% endfor %}
-
-      # COLOR TEMP DOWN
-      - conditions:
-          - condition: template
-            value_template: '{{ cluster_id == 768 }}'
-          - condition: template
-            value_template: '{{ endpoint_id == 1 }}'
-          - condition: template
-            value_template: '{{ command == "step_color_temp" }}'
-          - condition: template
-            value_template: '{{ mode == "StepMode.Down" }}'
-        sequence:
-          - service: light.turn_on
-            target: !input press_light
-            data:
-              color_temp: >
-                {% if press_light is mapping %}
-                  {% set entities = [press_light.entity_id] %}
-                {% elif press_light is iterable %}
-                  {% set entities = press_light | map(attribute='entity_id') | list %}
-                {% else %}
-                  {% set entities = [press_light] %}
-                {% endif %}
-                {% for ent in entities %}
-                  {% set cur = state_attr(ent, 'color_temp') | int(370) %}
-                  {% set maxm = state_attr(ent, 'max_mireds') | int(500) %}
-                  {% set step = 20 %}
-                  {{ [cur + step, maxm] | min }}
-                {% endfor %}
+        sequence: !input rotate_down
 
 
     default: []
